@@ -1,59 +1,64 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
+import { Stack } from 'expo-router';
 
-import { useColorScheme } from '@/components/useColorScheme';
-
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
-
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
-};
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
+// Prevent the native splash screen from hiding until we are ready
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-    ...FontAwesome.font,
-  });
-
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
-  useEffect(() => {
-    if (error) throw error;
-  }, [error]);
+  const [appIsReady, setAppIsReady] = useState(false);
 
   useEffect(() => {
-    if (loaded) {
+    async function prepare() {
+      try {
+        // Step 3: Simulate our custom loader for 3 seconds
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setAppIsReady(true);
+      }
+    }
+    prepare();
+  }, []);
+
+  useEffect(() => {
+    if (appIsReady) {
+      // Hide the native splash to reveal our custom ActivityIndicator loader
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [appIsReady]);
 
-  if (!loaded) {
-    return null;
+  if (!appIsReady) {
+    return (
+      <View style={styles.loaderContainer}>
+        {/* We will replace this with Lottie in Step 5 */}
+        <ActivityIndicator size="large" color="#000000" />
+        <Text style={styles.loaderText}>ADVOCACY</Text>
+      </View>
+    );
   }
 
-  return <RootLayoutNav />;
-}
-
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" />
+    </Stack>
   );
 }
+
+const styles = StyleSheet.create({
+  loaderContainer: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loaderText: {
+    marginTop: 20,
+    fontSize: 18,
+    fontWeight: '600',
+    letterSpacing: 4,
+    color: '#000000',
+  },
+});

@@ -1,21 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Image, Dimensions, ActivityIndicator } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { Stack } from 'expo-router';
 
-// Prevent the native splash screen from hiding until we are ready
+const { width } = Dimensions.get('window');
+
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
+  const [isGifLoaded, setIsGifLoaded] = useState(false);
 
   useEffect(() => {
     async function prepare() {
       try {
-        // Step 3: Simulate our custom loader for 3 seconds
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // We give the GIF 4 seconds to play
+        await new Promise(resolve => setTimeout(resolve, 4000));
       } catch (e) {
-        console.warn(e);
+        console.warn("Loader Error:", e);
       } finally {
         setAppIsReady(true);
       }
@@ -25,7 +27,6 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (appIsReady) {
-      // Hide the native splash to reveal our custom ActivityIndicator loader
       SplashScreen.hideAsync();
     }
   }, [appIsReady]);
@@ -33,9 +34,17 @@ export default function RootLayout() {
   if (!appIsReady) {
     return (
       <View style={styles.loaderContainer}>
-        {/* We will replace this with Lottie in Step 5 */}
-        <ActivityIndicator size="large" color="#000000" />
-        <Text style={styles.loaderText}>ADVOCACY</Text>
+        <Image 
+          // ENSURE THIS PATH IS EXACTLY CORRECT
+          source={require('../assets/images/loader.gif')} 
+          style={styles.gifStyle}
+          resizeMode="contain"
+          onLoad={() => setIsGifLoaded(true)}
+        />
+        {/* If the GIF takes too long to decode, show a spinner so it's not blank */}
+        {!isGifLoaded && (
+          <ActivityIndicator size="small" color="#000000" style={{ marginTop: 20 }} />
+        )}
       </View>
     );
   }
@@ -54,11 +63,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  loaderText: {
-    marginTop: 20,
-    fontSize: 18,
-    fontWeight: '600',
-    letterSpacing: 4,
-    color: '#000000',
+  gifStyle: {
+    width: width * 0.7,
+    height: width * 0.7,
   },
 });
